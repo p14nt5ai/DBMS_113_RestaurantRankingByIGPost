@@ -38,7 +38,7 @@ CREATE TABLE restaurant (
 
 -- IG Poster Table
 CREATE TABLE ig_poster (
-    poster_id VARCHAR(50) PRIMARY KEY AUTO_INCREMENT,
+    poster_id VARCHAR(50) PRIMARY KEY,
     profile_link VARCHAR(100),
     fan_num INT,
     following_num INT,
