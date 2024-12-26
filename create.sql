@@ -1,13 +1,14 @@
 -- User Table
-CREATE TABLE user (
+CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
     email VARCHAR(50),
     address NVARCHAR(50),
-    gender CHAR(6), --female or male
-    birthday DATETIME DEFAULT NULL
+    gender ENUM('male', 'female'),
+    birthday DATETIME
 );
+
 
 -- User List Table
 CREATE TABLE list (
@@ -15,7 +16,15 @@ CREATE TABLE list (
     user_id INT NOT NULL,
     name NVARCHAR(50) NOT NULL,
     modified_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES user(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- Restaurant Table
+CREATE TABLE restaurant (
+    restaurant_id INT PRIMARY KEY AUTO_INCREMENT,
+    name NVARCHAR(50) NOT NULL,
+    address NVARCHAR(50),
+    contact_number CHAR(10)
 );
 
 -- List Item Table
@@ -26,14 +35,6 @@ CREATE TABLE list_item (
     PRIMARY KEY (list_id, restaurant_id),
     FOREIGN KEY (list_id) REFERENCES list(list_id),
     FOREIGN KEY (restaurant_id) REFERENCES restaurant(restaurant_id)
-);
-
--- Restaurant Table
-CREATE TABLE restaurant (
-    restaurant_id INT PRIMARY KEY AUTO_INCREMENT,
-    name NVARCHAR(50) NOT NULL,
-    address NVARCHAR(50),
-    contact_number CHAR(10)
 );
 
 -- IG Poster Table

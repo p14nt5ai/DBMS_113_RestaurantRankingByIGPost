@@ -35,18 +35,18 @@ class SQLHelper:
     # User Operations
     def add_user(self, username, password, email, address, gender, birthday):
         query = """
-            INSERT INTO user (username, password, email, address, gender, birthday)
+            INSERT INTO users (username, password, email, address, gender, birthday)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
         self.execute_query(query, (username, password, email, address, gender, birthday))
 
     def delete_user(self, user_id):
-        query = "DELETE FROM user WHERE user_id = %s"
+        query = "DELETE FROM users WHERE user_id = %s"
         self.execute_query(query, (user_id,))
 
     def update_user(self, user_id, **kwargs):
         updates = ', '.join(f"{k} = %s" for k in kwargs.keys())
-        query = f"UPDATE user SET {updates} WHERE user_id = %s"
+        query = f"UPDATE users SET {updates} WHERE user_id = %s"
         self.execute_query(query, (*kwargs.values(), user_id))
 
     # List Operations
@@ -73,7 +73,7 @@ class SQLHelper:
 
     # Searching queries
     def get_user(self, username, password):
-        query = "SELECT * FROM user WHERE username = %s AND password = %s"
+        query = "SELECT * FROM users WHERE username = %s AND password = %s"
         return self.fetch_query(query, (username, password))
     
     def get_user_lists(self, user_id):
@@ -138,7 +138,6 @@ if __name__ == '__main__':
     
     user_id = new_user[0]['user_id'] if new_user else None
     db.update_user(user_id, email='new_email@example.com')
-    #db.delete_user(user_id)
     
     new_user = db.get_user('john_doe', 'password123')
     print(new_user)
@@ -147,10 +146,11 @@ if __name__ == '__main__':
     db.create_list(user_id, 'Favorite Restaurants')
     user_lists = db.get_user_lists(user_id)
     list_id = user_lists[0]['list_id'] if user_lists else None
+    print(db.get_user_lists(user_id))
+    print(db.get_list_items(list_id))
+    
     db.update_list_name(list_id, 'Top Picks')
     db.add_item_to_list(list_id, 10)
-    db.delete_item_from_list(list_id, 10)
-    db.delete_list(list_id)
     print(db.get_user_lists(user_id))
     print(db.get_list_items(list_id))
     
@@ -163,4 +163,7 @@ if __name__ == '__main__':
     print(db.get_posts_for_restaurant(1))
     print(db.get_ig_poster_for_post(1))
     
+    db.delete_item_from_list(list_id, 10)
+    db.delete_list(list_id)
+    db.delete_user(user_id)
     db.close_connection()
