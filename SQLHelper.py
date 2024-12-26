@@ -59,15 +59,10 @@ class SQLHelper:
         self.execute_query(query, (list_id,))
         
     def update_list_name(self, list_id, new_name):
-        query = """
-            UPDATE list 
-            SET name = %s, modified_time = CURRENT_TIMESTAMP 
-            WHERE list_id = %s
-        """
+        query = "UPDATE list SET name = %s WHERE list_id = %s"
         self.execute_query(query, (new_name, list_id))
 
     # List Item Operations
-    
     def add_item_to_list(self, list_id, restaurant_id):
         query = "INSERT INTO list_item (list_id, restaurant_id) VALUES (%s, %s)"
         self.execute_query(query, (list_id, restaurant_id))

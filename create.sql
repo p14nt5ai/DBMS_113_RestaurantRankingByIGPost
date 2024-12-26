@@ -6,7 +6,7 @@ CREATE TABLE user (
     email VARCHAR(50),
     address NVARCHAR(50),
     gender CHAR(6), --female or male
-    birthday TIMESTAMP
+    birthday DATETIME DEFAULT NULL
 );
 
 -- User List Table
@@ -14,7 +14,7 @@ CREATE TABLE list (
     list_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     name NVARCHAR(50) NOT NULL,
-    modified_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(user_id)
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE list (
 CREATE TABLE list_item (
     list_id INT NOT NULL,
     restaurant_id INT NOT NULL,
-    inserted_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    inserted_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (list_id, restaurant_id),
     FOREIGN KEY (list_id) REFERENCES list(list_id),
     FOREIGN KEY (restaurant_id) REFERENCES restaurant(restaurant_id)
