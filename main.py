@@ -58,7 +58,7 @@ def check_username():
         return {"status": "error", "message": "Username is required"}, 400
 
     # 檢查用戶名是否已存在
-    user = db.fetch_query("SELECT * FROM users WHERE username = %s", (username,))
+    user = db.fetch_query("SELECT * FROM user WHERE username = %s", (username,))
     if user:
         return {"status": "error", "message": "Username already exists"}, 409
     return {"status": "success", "message": "Username is available"}, 200
@@ -175,7 +175,7 @@ def edit_account():
         return redirect("/profile")
     
     # 如果是 GET 請求，顯示編輯頁面
-    user_info = db.fetch_query("SELECT * FROM users WHERE user_id = %s", (user_id,))[0]
+    user_info = db.fetch_query("SELECT * FROM user WHERE user_id = %s", (user_id,))[0]
 
     # 格式化生日為 YYYY-MM-DD
     if user_info.get('birthday'):

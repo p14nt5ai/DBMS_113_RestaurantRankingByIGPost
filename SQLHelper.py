@@ -35,18 +35,18 @@ class SQLHelper:
     # User Operations
     def add_user(self, username, password, email, address, gender, birthday):
         query = """
-            INSERT INTO users (username, password, email, address, gender, birthday)
+            INSERT INTO user (username, password, email, address, gender, birthday)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
         self.execute_query(query, (username, password, email, address, gender, birthday))
 
     def delete_user(self, user_id):
-        query = "DELETE FROM users WHERE user_id = %s"
+        query = "DELETE FROM user WHERE user_id = %s"
         self.execute_query(query, (user_id,))
 
     def update_user(self, user_id, **kwargs):
         updates = ', '.join(f"{k} = %s" for k in kwargs.keys())
-        query = f"UPDATE users SET {updates} WHERE user_id = %s"
+        query = f"UPDATE user SET {updates} WHERE user_id = %s"
         self.execute_query(query, (*kwargs.values(), user_id))
 
     # List Operations
@@ -73,7 +73,7 @@ class SQLHelper:
 
     # Searching queries
     def get_user(self, username, password):
-        query = "SELECT * FROM users WHERE username = %s AND password = %s"
+        query = "SELECT * FROM user WHERE username = %s AND password = %s"
         return self.fetch_query(query, (username, password))
     
     def get_user_lists(self, user_id):
