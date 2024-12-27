@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Restaurant Rankings</h2>
+
+<!-- 搜尋欄 -->
+<div class="row mb-4">
+    <div class="col-md-6 offset-md-3">
+        <form method="GET" action="{{ url_for('rankings') }}" class="input-group">
+            <input type="text" class="form-control" name="search" placeholder="Search for restaurants..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Restaurant Name</th>
+            <th>Address</th>
+            <th>Contact</th>
+            <th>Average Rating</th>
+            <th>Total Posts</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for restaurant in ranked_restaurants %}
+        <tr>
+            <td>{{ loop.index + (page - 1) * 10 }}</td>
+            <td>{{ restaurant.name }}</td>
+            <td>{{ restaurant.address }}</td>
+            <td>{{ restaurant.contact_number }}</td>
+            <td>{{ "%.1f"|format(restaurant.avg_rating or 0) }}</td>
+            <td>{{ restaurant.post_count }}</td>
+            <td>
+                <button type="button" 
+                        class="btn btn-info btn-sm view-posts" 
+                        data-restaurant-id="{{ restaurant.restaurant_id }}"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#postsModal">
+                    View Posts
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- 分頁區域 -->
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <div>
+        <strong>Page {{ page }} of {{ total_pages }}</strong>
+    </div>
+    <nav>
+        <ul class="pagination">
+            <!-- 上一頁 -->
+            <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('rankings', page=page-1, search=search_query) }}">Previous</a>
+            </li>
+
+            <!-- 動態頁碼按鈕 -->
+            {% set start_page = max(1, page - 2) %}
+            {% set end_page = min(total_pages, page + 2) %}
+            {% for p in range(start_page, end_page + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('rankings', page=p, search=search_query) }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+
+            <!-- 下一頁 -->
+            <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('rankings', page=page+1, search=search_query) }}">Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- Modal for Posts -->
+<div class="modal fade" id="postsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Restaurant Posts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="postsContainer"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add necessary scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Handle view posts button click
+    $('.view-posts').click(function() {
+        const restaurantId = $(this).data('restaurant-id');
+        
+        // Clear previous content
+        $('#postsContainer').empty();
+        
+        // Show loading indicator
+        $('#postsContainer').html('<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        // Fetch posts data
+        $.get(`/get_restaurant_posts/${restaurantId}`, function(posts) {
+            if (posts.length === 0) {
+                $('#postsContainer').html('<p>No posts available for this restaurant.</p>');
+                return;
+            }
+            
+            let html = '';
+            posts.forEach(function(post) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">Rating: ${post.rating}/5</h5>
+                                <a href="${post.profile_link}" target="_blank" class="btn btn-primary btn-sm">
+                                    View Instagram Profile
+                                </a>
+                            </div>
+                            <p class="card-text">${post.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="${post.post_link}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    View Post on Instagram
+                                </a>
+                                <div class="text-muted small">
+                                    <span class="me-2">Fans: ${post.fan_num}</span>
+                                    <span class="me-2">Following: ${post.following_num}</span>
+                                    <span>Posts: ${post.post_num}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            $('#postsContainer').html(html);
+        }).fail(function() {
+            $('#postsContainer').html('<p class="text-danger">Error loading posts. Please try again.</p>');
+        });
+    });
+});
+</script>
+
+<style>
+#postsContainer {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.card {
+    border: 1px solid rgba(0,0,0,.125);
+    box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+</style>
+{% endblock %}
