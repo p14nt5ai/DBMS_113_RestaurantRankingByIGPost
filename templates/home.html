@@ -5,9 +5,13 @@
 
 <!-- 搜尋欄 -->
 <div class="row mb-4">
-    <div class="col-md-6 offset-md-3">
+    <div class="col-md-8 offset-md-2">
         <form method="GET" action="{{ url_for('home') }}" class="input-group">
-            <input type="text" class="form-control" name="search" placeholder="Search for restaurants..." value="{{ search_query }}">
+            <select name="search_type" class="form-select" style="max-width: 200px;">
+                <option value="name" {% if search_type == 'name' %}selected{% endif %}>Restaurant Name</option>
+                <option value="address" {% if search_type == 'address' %}selected{% endif %}>Restaurant Address</option>
+            </select>
+            <input type="text" class="form-control" name="search_query" placeholder="Enter your search term..." value="{{ search_query }}">
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
