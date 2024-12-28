@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Sign Up</h2>
+<form id="signup-form" method="POST">
+    <div class="mb-3">
+        <label for="username" class="form-label">Username: <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="username" name="username" required>
+        <div id="username-feedback" class="text-danger mt-1" style="display:none;"></div>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password: <span class="text-danger">*</span></label>
+        <input type="password" class="form-control" id="password" name="password" required>
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email:</label>
+        <input type="email" class="form-control" id="email" name="email">
+    </div>
+    <div class="mb-3">
+        <label for="address" class="form-label">Address:</label>
+        <input type="text" class="form-control" id="address" name="address">
+    </div>
+    <div class="mb-3">
+        <label for="gender" class="form-label">Gender:</label>
+        <select class="form-select" id="gender" name="gender">
+            <option value="" selected>Prefer not to say</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="birthday" class="form-label">Birthday:</label>
+        <input type="date" class="form-control" id="birthday" name="birthday">
+    </div>
+    <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">Sign Up</button>
+        <a href="/" class="btn btn-secondary">Back to Login</a> <!-- 返回登入頁面的按鈕 -->
+    </div>
+</form>
+
+<script>
+    // 當用戶名欄位失去焦點時檢查用戶名是否已存在
+    document.getElementById('username').addEventListener('blur', function () {
+        const username = this.value.trim();
+        const feedback = document.getElementById('username-feedback');
+
+        // 如果用戶名為空，顯示錯誤訊息
+        if (!username) {
+            feedback.textContent = "Username is required";
+            feedback.style.display = "block";
+            return;
+        }
+
+        // 發送 AJAX 請求檢查用戶名是否已存在
+        fetch('/check_username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username: username })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'error') {
+                feedback.textContent = data.message;
+                feedback.style.display = "block";
+            } else {
+                feedback.textContent = "";
+                feedback.style.display = "none";
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+        });
+    });
+
+    // 防止表單提交時重新整理畫面
+    document.getElementById('signup-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const feedback = document.getElementById('username-feedback');
+        if (feedback.textContent) {
+            alert("Please resolve the errors before submitting the form.");
+            return;
+        }
+
+        this.submit();
+    });
+</script>
+{% endblock %}

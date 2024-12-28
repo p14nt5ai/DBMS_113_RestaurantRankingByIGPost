@@ -1,5 +1,5 @@
 -- User Table
-CREATE TABLE users (
+CREATE TABLE 'user' (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(50) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE list (
     user_id INT NOT NULL,
     name NVARCHAR(50) NOT NULL,
     modified_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES `user`(user_id)
 );
 
 -- Restaurant Table
