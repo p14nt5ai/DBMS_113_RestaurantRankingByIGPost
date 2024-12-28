@@ -100,7 +100,7 @@ class SQLHelper:
 
     def search_restaurant_by_avg_rating(self, min_rating, max_rating):
         query = """
-            SELECT r.*, AVG(p.rating) AS avg_rating
+            SELECT r.*, AVG(p.rating) AS avg_rating, COUNT(p.post_id) as post_count
             FROM restaurant r
             JOIN post p ON r.restaurant_id = p.restaurant_id
             GROUP BY r.restaurant_id
