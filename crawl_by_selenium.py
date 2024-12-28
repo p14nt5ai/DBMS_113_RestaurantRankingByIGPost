@@ -7,23 +7,22 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 
-options = Options()
-options.add_argument('--disable-blink-features=AutomationControlled') # 防止被測出用Selenium的方法
 
 import sys
 import io
 import random
 
-driver = webdriver.Firefox(options=options)    
-
-db = SQLHelper(
-    host="localhost",
-    user="root",
-    password="your_password",
-    database="your_db"
-)
+ 
 
 
+options = Options()
+options.add_argument('--disable-blink-features=AutomationControlled') # 防止被測出用Selenium的方法
+driver = webdriver.Firefox(options=options)   
+
+
+def driver_init(driver=None):
+    driver = webdriver.Firefox(options=options)
+    return driver
 
 def text2int(textnum):
     try:
@@ -56,7 +55,13 @@ def insert_data_to_db(restaurant,
                       post_link, 
                       content,
                       rating):
-    
+
+    db = SQLHelper(
+        host="localhost",
+        user="root",
+        password="your_password",
+        database="your_database"
+    )
     restaurant_number = restaurant_number.replace(" ", "")
     if restaurant_number[:4] == "+886":
         restaurant_number = restaurant_number[4:]
@@ -212,7 +217,8 @@ def infinite_scroll_instagram(max_scroll):
 
         # 造訪該餐廳的 IG 頁面
 
-        restaurant.click()
+        driver.get(restaurant_link)
+        # restaurant.click()
 
         # 有時抓到的非餐廳連結，會是行政區連結
         # 這時候會跳過這個連結
@@ -253,6 +259,9 @@ def infinite_scroll_instagram(max_scroll):
         
         # 造訪作者的 IG 頁面
         driver.get(poster_link)
+        follower = None
+        following = None
+        num_post = None
         try:
 
             follower = WebDriverWait(driver, 5).until(
@@ -280,6 +289,8 @@ def infinite_scroll_instagram(max_scroll):
         # 將小數點與其他無關符號去除 
         # K, M 等字串轉換為數字
 
+        
+        
         follower = text2int(follower)
         following = text2int(following)
         num_post = text2int(num_post)
@@ -301,9 +312,12 @@ def infinite_scroll_instagram(max_scroll):
     
 
 def main():
-        
     
+    place_list = ["澎湖", "金門", "馬祖", "高雄", "台南", "台中", "台北", "新竹", "桃園", "新北", "基隆", "宜蘭", "花蓮", "台東", "屏東",]  
+    # goto post_page
+
     driver.get('https://www.instagram.com')   # 打開瀏覽器，開啟網頁
+        
 
     # wait until login page is loaded
     driver.implicitly_wait(5)
@@ -312,8 +326,8 @@ def main():
     account = driver.find_element('css selector', 'input[name="username"]')
     password = driver.find_element('css selector', 'input[name="password"]')
     # fill in account and password
-    account.send_keys('your_account')
-    password.send_keys('your_password')
+    account.send_keys('your_ig_account')
+    password.send_keys('your_ig_password')
 
     driver.implicitly_wait(3)
     # click login button
@@ -327,20 +341,19 @@ def main():
             (By.CSS_SELECTOR, 'section > div > div > svg')
         )
     )
-    place_list = ["桃園", "新北", "基隆", "宜蘭", "花蓮", "台東", "屏東", "澎湖", "金門", "馬祖", "高雄", "台南", "台中", "台北", "新竹"]
-    # goto post_page
     for place in place_list:
+        
         driver.get(f'https://www.instagram.com/explore/search/keyword/?q=%23{place}美食') # 進入指定 hashtag 頁面
-
         element = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, '.xwrv7xz > div > div > div > div > a')
             )
         )
-        infinite_scroll_instagram(10) # 捲動 10 次 (可自調)
+        infinite_scroll_instagram(2) # 捲動次數 (可自調)
         print(f"Finished {place} page")
-        driver.close()
-        driver.quit()
+
+        time.sleep(3)
+    driver.close()
 
 
 if __name__ == "__main__":
