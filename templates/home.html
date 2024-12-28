@@ -70,21 +70,31 @@
         <ul class="pagination">
             <!-- 上一頁 -->
             <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('home', page=page-1, search=search_query) }}">Previous</a>
+                <a class="page-link" href="{{ url_for('home', page=page-1, search=search_query, search_type=search_type) }}">Previous</a>
             </li>
 
             <!-- 動態頁碼按鈕 -->
-            {% set start_page = max(1, page - 2) %}
-            {% set end_page = min(total_pages, page + 2) %}
-            {% for p in range(start_page, end_page + 1) %}
+            {% set window_size = 2 %}
+            {% set window_start = page - window_size %}
+            {% set window_end = page + window_size %}
+            
+            {% if window_start <= 1 %}
+                {% set window_start = 1 %}
+                {% set window_end = min(total_pages, 5) %}
+            {% elif window_end >= total_pages %}
+                {% set window_start = max(1, total_pages - 4) %}
+                {% set window_end = total_pages %}
+            {% endif %}
+            
+            {% for p in range(window_start, window_end + 1) %}
             <li class="page-item {% if p == page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('home', page=p, search=search_query) }}">{{ p }}</a>
+                <a class="page-link" href="{{ url_for('home', page=p, search=search_query, search_type=search_type) }}">{{ p }}</a>
             </li>
             {% endfor %}
 
             <!-- 下一頁 -->
             <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('home', page=page+1, search=search_query) }}">Next</a>
+                <a class="page-link" href="{{ url_for('home', page=page+1, search=search_query, search_type=search_type) }}">Next</a>
             </li>
         </ul>
     </nav>
