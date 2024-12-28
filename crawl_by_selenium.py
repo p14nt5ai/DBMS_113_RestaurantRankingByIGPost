@@ -24,6 +24,26 @@ db = SQLHelper(
 )
 
 
+
+def text2int(textnum):
+    try:
+        pointflag = False
+        if textnum.find(".") != -1:
+            pointflag = True
+
+        textnum = textnum.replace(".", "")
+        textnum = textnum.replace(" ", "")
+        textnum = textnum.replace(",", "")
+        if textnum[-1] == "K":
+            textnum = int(textnum[:-1]) * 1000
+        elif textnum[-1] == "M":
+            textnum = int(textnum[:-1]) * 1000000
+        if pointflag:
+            textnum = int(textnum) / 10
+    except:
+        textnum = None
+    return textnum
+
 def insert_data_to_db(restaurant, 
                       restaurant_link, 
                       restaurant_address, 
@@ -185,9 +205,7 @@ def infinite_scroll_instagram(max_scroll):
             print("No restaurant name found on this post.")
             no_restaurant_flag = True
 
-        # rating 待實作
-
-        rating = random.randint(1, 5)
+        rating = None   # rating 在 get_rating.py 中取得
         
         if no_restaurant_flag:
             continue
@@ -259,59 +277,12 @@ def infinite_scroll_instagram(max_scroll):
         except:
             print("No follower, following or num_post found on this poster_page.")
             
-
-        # str to int
-        # try catch
-        
         # 將小數點與其他無關符號去除 
         # K, M 等字串轉換為數字
 
-        try:
-            pointflag = False
-            if follower.find(".") != -1:
-                pointflag = True
-
-            follower = follower.replace(".", "")
-            follower = follower.replace(" ", "")
-            follower = follower.replace(",", "")
-            if follower[-1] == "K":
-                follower = int(follower[:-1]) * 1000
-            elif follower[-1] == "M":
-                follower = int(follower[:-1]) * 1000000
-            if pointflag:
-                follower = int(follower) / 10
-        except:
-            follower = None
-        try:
-            pointflag = False
-            if following.find(".") != -1:
-                pointflag = True
-            following = following.replace(".", "")
-            following = following.replace(" ", "")
-            following = following.replace(",", "")
-            if following[-1] == "K":
-                following = int(following[:-1]) * 1000
-            elif following[-1] == "M":
-                following = int(following[:-1]) * 1000000
-            if pointflag:
-                following = int(following) / 10
-        except:
-            following = None
-        try:
-            pointflag = False
-            if num_post.find(".") != -1:
-                pointflag = True
-            num_post = num_post.replace(".", "")
-            num_post = num_post.replace(" ", "")
-            num_post = num_post.replace(",", "")
-            if num_post[-1] == "K":
-                num_post = int(num_post[:-1]) * 1000
-            elif follower[-1] == "M":
-                num_post = int(num_post[:-1]) * 1000000
-            if pointflag:
-                num_post = int(num_post) / 10
-        except:
-            num_post = None
+        follower = text2int(follower)
+        following = text2int(following)
+        num_post = text2int(num_post)
 
         # 寫入資料庫
         insert_data_to_db(restaurant_name, 
