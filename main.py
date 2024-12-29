@@ -74,14 +74,16 @@ def home():
     # 每頁顯示的餐廳數量
     RESTAURANTS_PER_PAGE = 10
 
-    # 獲取當前用戶已儲存的餐廳 ID
-    saved_restaurants = db.fetch_query("""
-        SELECT li.restaurant_id 
-        FROM list_item li
-        JOIN list l ON li.list_id = l.list_id
-        WHERE l.user_id = %s
-    """, (user_id,))
-    saved_ids = {r['restaurant_id'] for r in saved_restaurants}
+    # 獲取當前用戶所有清單中已儲存的餐廳 ID
+    user_lists = db.get_user_lists(user_id)
+    # 建立一個字典，key 是餐廳 ID，value 是一個字典，包含所有的 list_id 和其對應的 list 名稱
+    saved_restaurants = {}
+    for user_list in user_lists:
+        list_items = db.get_list_items(user_list['list_id'])
+        for item in list_items:
+            if item['restaurant_id'] not in saved_restaurants:
+                saved_restaurants[item['restaurant_id']] = {}
+            saved_restaurants[item['restaurant_id']][user_list['list_id']] = user_list['name']
 
     # 根據搜尋類型執行不同的搜尋
     if search_query:
@@ -112,7 +114,8 @@ def home():
         "home.html", 
         username=session['username'], 
         restaurants=restaurants, 
-        saved_ids=saved_ids, 
+        saved_restaurants=saved_restaurants,
+        user_lists=user_lists,
         search_query=search_query,
         search_type=search_type,
         page=page, 
@@ -139,8 +142,15 @@ def profile():
             "name": user_list['name'],
             "restaurants": restaurants
         })
+    
+    # 獲取需要展開的清單 ID
+    expanded_list = request.args.get('expanded_list', type=int)
 
-    return render_template("profile.html", lists_with_restaurants=lists_with_restaurants)
+    return render_template(
+        "profile.html",
+        lists_with_restaurants=lists_with_restaurants,
+        expanded_list=expanded_list
+    )
 
 @app.route("/edit_account", methods=["GET", "POST"])
 def edit_account():
@@ -297,28 +307,73 @@ def add_to_list():
     if 'username' not in session:
         return redirect("/")
     
-    # 獲取用戶 ID 和餐廳 ID
     user_id = session['user_id']
     restaurant_id = request.form['restaurant_id']
-    page = request.form.get('page', 1)  # 獲取當前頁碼，默認為 1
-    search_query = request.form.get('search', '')  # 獲取搜尋關鍵字
+    list_id = request.form['list_id']
+    page = request.form.get('page', 1)
+    search_query = request.form.get('search_query', '')
 
-    # 獲取用戶的清單
-    user_lists = db.get_user_lists(user_id)
-    if not user_lists:
-        # 如果用戶沒有清單，創建默認清單
-        db.create_list(user_id, "My Favorites")
-        user_lists = db.get_user_lists(user_id)
+    # 檢查該餐廳是否已在選擇的 list 中
+    list_items = db.get_list_items(list_id)
+    if any(str(item['restaurant_id']) == str(restaurant_id) for item in list_items):
+        flash("This restaurant is already in the selected list.", "warning")
+    else:
+        # 將餐廳添加到選擇的 list
+        db.add_item_to_list(list_id, restaurant_id)
+        flash("Restaurant added to your list successfully.", "success")
 
-    # 使用第一個清單作為默認的 list_id
-    list_id = user_lists[0]['list_id']
+    return redirect(url_for('home', page=page, search_query=search_query))
 
-    # 將餐廳添加到清單
-    db.add_item_to_list(list_id, restaurant_id)
-    flash("Restaurant added to your list.", "success")
+@app.route("/create_list", methods=["POST"])
+def create_list():
+    if 'username' not in session:
+        return redirect("/")
+    
+    user_id = session['user_id']
+    list_name = request.form.get('list_name', '').strip()
+    
+    if list_name:
+        db.create_list(user_id, list_name)
+        flash("New list created successfully.", "success")
+    else:
+        flash("List name cannot be empty.", "danger")
+    
+    return redirect("/profile")
 
-    # 根據是否有搜尋查詢決定重定向路徑，將 Flash message 傳遞到頁面
-    return redirect(url_for('home', page=page, search=search_query))
+@app.route("/rename_list", methods=["POST"])
+def rename_list():
+    if 'username' not in session:
+        return redirect("/")
+    
+    list_id = request.form.get('list_id')
+    new_name = request.form.get('new_name', '').strip()
+    
+    if new_name:
+        db.update_list_name(list_id, new_name)
+        flash("List renamed successfully.", "success")
+    else:
+        flash("List name cannot be empty.", "danger")
+    
+    # 重定向時傳遞展開的清單 ID
+    return redirect(url_for("profile", expanded_list=list_id))
+
+@app.route("/delete_list", methods=["POST"])
+def delete_list():
+    if 'username' not in session:
+        return redirect("/")
+    
+    list_id = request.form.get('list_id')
+    
+    # First delete all items in the list
+    list_items = db.get_list_items(list_id)
+    for item in list_items:
+        db.delete_item_from_list(list_id, item['restaurant_id'])
+    
+    # Then delete the list itself
+    db.delete_list(list_id)
+    flash("List deleted successfully.", "success")
+    
+    return redirect("/profile")
 
 @app.route("/remove_from_list", methods=["POST"])
 def remove_from_list():
@@ -332,8 +387,8 @@ def remove_from_list():
     db.delete_item_from_list(list_id, restaurant_id)
     flash("Restaurant removed from your list.", "success")
     
-    # 返回到 Profile 頁面，立即顯示消息
-    return redirect("/profile")
+    # 重定向時傳遞展開的清單 ID
+    return redirect(url_for("profile", expanded_list=list_id))
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -45,16 +45,32 @@
             <td>{{ restaurant.address }}</td>
             <td>{{ restaurant.contact_number }}</td>
             <td>
-                {% if restaurant.restaurant_id in saved_ids %}
-                <button class="btn btn-secondary" disabled>Saved</button>
-                {% else %}
-                <form action="/add_to_list" method="POST" style="display:inline;">
+                <!-- 顯示已儲存的清單 -->
+                {% if restaurant.restaurant_id in saved_restaurants %}
+                    <div class="mb-2">
+                        {% for list_id, list_name in saved_restaurants[restaurant.restaurant_id].items() %}
+                            <span class="badge bg-secondary me-1">Saved in {{ list_name }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- 新增到其他清單的表單 -->
+                <form action="/add_to_list" method="POST" class="d-flex">
+                    <select name="list_id" class="form-select me-2" style="width: auto;" required>
+                        <option value="" disabled selected>Choose your list</option>
+                        {% for list in user_lists %}
+                            {% if restaurant.restaurant_id not in saved_restaurants or list.list_id|string not in saved_restaurants[restaurant.restaurant_id] %}
+                                <option value="{{ list.list_id }}">{{ list.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
                     <input type="hidden" name="restaurant_id" value="{{ restaurant.restaurant_id }}">
                     <input type="hidden" name="page" value="{{ page }}">
                     <input type="hidden" name="search_query" value="{{ search_query }}">
-                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="submit" class="btn btn-primary" {% if user_lists|length == 0 or (restaurant.restaurant_id in saved_restaurants and saved_restaurants[restaurant.restaurant_id]|length == user_lists|length) %}disabled{% endif %}>
+                        Save
+                    </button>
                 </form>
-                {% endif %}
             </td>
         </tr>
         {% endfor %}
