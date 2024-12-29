@@ -69,7 +69,7 @@
         <ul class="pagination">
             <!-- 上一頁 -->
             <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('rankings', page=page-1, search=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">Previous</a>
+                <a class="page-link" href="{{ url_for('rankings', page=page-1, search_query=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">Previous</a>
             </li>
 
             <!-- 動態頁碼按鈕 -->
@@ -87,13 +87,13 @@
             
             {% for p in range(window_start, window_end + 1) %}
             <li class="page-item {% if p == page %}active{% endif %}">
-                <a class="page-link" href="{{ url_for('rankings', page=p, search=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">{{ p }}</a>
+                <a class="page-link" href="{{ url_for('rankings', page=p, search_query=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">{{ p }}</a>
             </li>
             {% endfor %}
 
             <!-- 下一頁 -->
             <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                <a class="page-link" href="{{ url_for('rankings', page=page+1, search=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">Next</a>
+                <a class="page-link" href="{{ url_for('rankings', page=page+1, search_query=search_query, search_type=search_type, min_rating=min_rating, max_rating=max_rating) }}">Next</a>
             </li>
         </ul>
     </nav>
