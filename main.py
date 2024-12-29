@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, flash, session, url_for, jsonify
 import SQLHelper
 from math import ceil
-from datetime import datetime
+import hashlib
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
@@ -9,9 +9,6 @@ app.jinja_env.globals.update(max=max, min=min)
 
 # Instantiate SQLHelper
 db = SQLHelper.SQLHelper('localhost', 'root', '', 'final_project')
-
-# Number of restaurants per page
-RESTAURANTS_PER_PAGE = 10
 
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -69,7 +66,8 @@ def home():
         return redirect("/")
     
     # Handle search query
-    search_query = request.args.get('search', '').strip()
+    search_type = request.args.get('search_type', 'name')
+    search_query = request.args.get('search_query', '').strip()
     page = int(request.args.get('page', 1))
     user_id = session['user_id']
 
@@ -85,23 +83,23 @@ def home():
     """, (user_id,))
     saved_ids = {r['restaurant_id'] for r in saved_restaurants}
 
-    # 查詢餐廳列表和總數據量
+    # 根據搜尋類型執行不同的搜尋
     if search_query:
-        # 搜尋餐廳
-        total_restaurants = db.fetch_query(
-            "SELECT COUNT(*) AS total FROM restaurant WHERE name LIKE %s",
-            (f"%{search_query}%",)
-        )[0]['total']
-
-        offset = (page - 1) * RESTAURANTS_PER_PAGE
-        restaurants = db.fetch_query(
-            "SELECT * FROM restaurant WHERE name LIKE %s LIMIT %s OFFSET %s",
-            (f"%{search_query}%", RESTAURANTS_PER_PAGE, offset)
-        )
+        if search_type == 'name':
+            restaurants = db.search_restaurant_by_name(search_query)
+        elif search_type == 'address':
+            restaurants = db.search_restaurant_by_address(search_query)
+        else:
+            restaurants = []
+        
+        total_restaurants = len(restaurants)
+        # 手動進行分頁
+        start_idx = (page - 1) * RESTAURANTS_PER_PAGE
+        end_idx = start_idx + RESTAURANTS_PER_PAGE
+        restaurants = restaurants[start_idx:end_idx]
     else:
         # 無搜尋條件時
         total_restaurants = db.fetch_query("SELECT COUNT(*) AS total FROM restaurant")[0]['total']
-
         offset = (page - 1) * RESTAURANTS_PER_PAGE
         restaurants = db.fetch_query(
             "SELECT * FROM restaurant LIMIT %s OFFSET %s",
@@ -115,7 +113,8 @@ def home():
         username=session['username'], 
         restaurants=restaurants, 
         saved_ids=saved_ids, 
-        search_query=search_query, 
+        search_query=search_query,
+        search_type=search_type,
         page=page, 
         total_pages=total_pages
     )
@@ -209,65 +208,47 @@ def rankings():
     if 'username' not in session:
         return redirect("/")
     
-    # 處理搜尋查詢
-    search_query = request.args.get('search', '').strip()
+    search_type = request.args.get('search_type', 'name')
+    search_query = request.args.get('search_query', '').strip()
+    min_rating = request.args.get('min_rating', '')
+    max_rating = request.args.get('max_rating', '')
     page = int(request.args.get('page', 1))
     
     # 每頁顯示的餐廳數量
     RESTAURANTS_PER_PAGE = 10
-    
-    if search_query:
-        # 搜尋含有特定名稱的餐廳
-        total_restaurants = db.fetch_query(
-            """
-            SELECT COUNT(*) as total 
-            FROM restaurant r
-            LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
-            WHERE r.name LIKE %s
-            GROUP BY r.restaurant_id
-            """,
-            (f"%{search_query}%",)
-        )
-        total_count = len(total_restaurants) if total_restaurants else 0
 
-        offset = (page - 1) * RESTAURANTS_PER_PAGE
-        ranked_restaurants = db.fetch_query(
-            """
-            SELECT r.*, COUNT(p.post_id) as post_count, 
-                   AVG(p.rating) as avg_rating
-            FROM restaurant r
-            LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
-            WHERE r.name LIKE %s
-            GROUP BY r.restaurant_id
-            ORDER BY avg_rating DESC, post_count DESC
-            LIMIT %s OFFSET %s
-            """,
-            (f"%{search_query}%", RESTAURANTS_PER_PAGE, offset)
-        )
+    # 根據搜尋類型執行不同的搜尋
+    if search_type == 'rating' and min_rating and max_rating:
+        try:
+            min_rating = float(min_rating)
+            max_rating = float(max_rating)
+            ranked_restaurants = db.search_restaurant_by_avg_rating(min_rating, max_rating)
+        except ValueError:
+            ranked_restaurants = []
+    elif search_query:
+        if search_type == 'name':
+            ranked_restaurants = db.search_restaurant_by_name(search_query)
+        elif search_type == 'address':
+            ranked_restaurants = db.search_restaurant_by_address(search_query)
+        else:
+            ranked_restaurants = []
     else:
-        # 無搜尋條件時顯示所有餐廳
-        total_count = len(db.fetch_query(
-            """
-            SELECT r.restaurant_id
-            FROM restaurant r
-            LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
-            GROUP BY r.restaurant_id
-            """
-        ))
-
-        offset = (page - 1) * RESTAURANTS_PER_PAGE
-        ranked_restaurants = db.fetch_query(
-            """
+        # 無搜尋條件時，獲取所有餐廳並按評分排序
+        ranked_restaurants = db.fetch_query("""
             SELECT r.*, COUNT(p.post_id) as post_count, 
                    AVG(p.rating) as avg_rating
             FROM restaurant r
             LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
             GROUP BY r.restaurant_id
             ORDER BY avg_rating DESC, post_count DESC
-            LIMIT %s OFFSET %s
-            """,
-            (RESTAURANTS_PER_PAGE, offset)
-        )
+        """)
+
+    total_count = len(ranked_restaurants)
+    
+    # 手動進行分頁
+    start_idx = (page - 1) * RESTAURANTS_PER_PAGE
+    end_idx = start_idx + RESTAURANTS_PER_PAGE
+    ranked_restaurants = ranked_restaurants[start_idx:end_idx]
     
     total_pages = ceil(total_count / RESTAURANTS_PER_PAGE)
     
@@ -275,6 +256,9 @@ def rankings():
         "rankings.html",
         ranked_restaurants=ranked_restaurants,
         search_query=search_query,
+        search_type=search_type,
+        min_rating=min_rating,
+        max_rating=max_rating,
         page=page,
         total_pages=total_pages
     )
