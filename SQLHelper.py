@@ -91,11 +91,23 @@ class SQLHelper:
 
     # Restaurant Search
     def search_restaurant_by_name(self, keyword):
-        query = "SELECT * FROM restaurant WHERE name LIKE %s"
+        query = """
+            SELECT r.*, COUNT(p.post_id) AS post_count, AVG(p.rating) AS avg_rating
+            FROM restaurant r
+            LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
+            WHERE r.name LIKE %s
+            GROUP BY r.restaurant_id
+        """
         return self.fetch_query(query, (f"%{keyword}%",))
 
     def search_restaurant_by_address(self, keyword):
-        query = "SELECT * FROM restaurant WHERE address LIKE %s"
+        query = """
+            SELECT r.*, COUNT(p.post_id) AS post_count, AVG(p.rating) AS avg_rating
+            FROM restaurant r
+            LEFT JOIN post p ON r.restaurant_id = p.restaurant_id
+            WHERE r.address LIKE %s
+            GROUP BY r.restaurant_id
+        """
         return self.fetch_query(query, (f"%{keyword}%",))
 
     def search_restaurant_by_avg_rating(self, min_rating, max_rating):
