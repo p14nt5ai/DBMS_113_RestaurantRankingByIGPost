@@ -312,7 +312,8 @@ def add_to_list():
     list_id = request.form['list_id']
     page = request.form.get('page', 1)
     search_query = request.form.get('search_query', '')
-
+    search_type = request.form.get('search_type', 'name')  # 接收 search_type
+    
     # 檢查該餐廳是否已在選擇的 list 中
     list_items = db.get_list_items(list_id)
     if any(str(item['restaurant_id']) == str(restaurant_id) for item in list_items):
@@ -322,7 +323,8 @@ def add_to_list():
         db.add_item_to_list(list_id, restaurant_id)
         flash("Restaurant added to your list successfully.", "success")
 
-    return redirect(url_for('home', page=page, search_query=search_query))
+    # 將 search_type 傳回 home 頁面
+    return redirect(url_for('home', page=page, search_query=search_query, search_type=search_type))
 
 @app.route("/create_list", methods=["POST"])
 def create_list():

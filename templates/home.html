@@ -67,6 +67,7 @@
                     <input type="hidden" name="restaurant_id" value="{{ restaurant.restaurant_id }}">
                     <input type="hidden" name="page" value="{{ page }}">
                     <input type="hidden" name="search_query" value="{{ search_query }}">
+                    <input type="hidden" name="search_type" value="{{ search_type }}"> <!-- 新增這一行 -->
                     <button type="submit" class="btn btn-primary" {% if user_lists|length == 0 or (restaurant.restaurant_id in saved_restaurants and saved_restaurants[restaurant.restaurant_id]|length == user_lists|length) %}disabled{% endif %}>
                         Save
                     </button>
