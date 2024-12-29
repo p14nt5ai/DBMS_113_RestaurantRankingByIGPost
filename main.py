@@ -136,6 +136,7 @@ def profile():
     # 查詢每個清單的餐廳資訊
     lists_with_restaurants = []
     for user_list in user_lists:
+        # 餐廳已經在 SQL 查詢中按 inserted_time 排序
         restaurants = db.get_list_items(user_list['list_id'])
         lists_with_restaurants.append({
             "list_id": user_list['list_id'],

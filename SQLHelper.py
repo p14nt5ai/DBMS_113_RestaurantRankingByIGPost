@@ -82,10 +82,11 @@ class SQLHelper:
     
     def get_list_items(self, list_id):
         query = """
-            SELECT li.restaurant_id, r.name, r.address, r.contact_number
+            SELECT li.restaurant_id, r.name, r.address, r.contact_number, li.inserted_time
             FROM list_item li
             JOIN restaurant r ON li.restaurant_id = r.restaurant_id
             WHERE li.list_id = %s
+            ORDER BY li.inserted_time ASC
         """
         return self.fetch_query(query, (list_id,))
 
